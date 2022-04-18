@@ -13,16 +13,16 @@ export const signin = async (req, res) => {
             return res.status(404).json({ message: "User does not exist" });
         }
 
-        const isPasswordCorrect = await bcrypt.compare(password, existingUser.password);
+        const isPasswordCorrect = await bcrypt.compare(password.toString(), existingUser.password);
         if (!isPasswordCorrect) {
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
         const token = jwt.sign({ email: existingUser.email, id: existingUser._id }, 'SECRETKEY', { expiresIn: "1h" });
 
-        res, status(200).json({ result: existingUser, token });
+        res.status(200).json({ result: existingUser, token });
     } catch (error) {
-        res, status(500).json({ message: 'Something went wrong' });
+        res.status(500).json({ message: 'Something went wrong' });
     }
 };
 
@@ -30,22 +30,24 @@ export const signup = async (req, res) => {
     const { email, password, confirmPassword, firstName, lastName } = req.body;
 
     try {
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ message: "User already exist" });
+        const oldUser = await User.findOne({ email });
+
+        if (oldUser) {
+            return res.status(400).json({ message: "User already exists" });
         }
 
-        if (password !== confirmPassword) {
-            return res.status(400).json({ message: "Passwords don't match" });
+        if (password.toString() != confirmPassword.toString()) {
+            return res.status(400).json({ message: "Password not match" });
         }
+        const hashedPassword = await bcrypt.hash(password.toString(), 12);
+        const result = await User.create({ name: `${firstName} ${lastName}`, email: email.toString(), password: hashedPassword });
 
-        const hashedPassword = await bcrypt.hash(password, 12);
-
-        const result = await User.create({ email, password: hashedPassword, name: `${firstName} ${lastName}` });
         const token = jwt.sign({ email: result.email, id: result._id }, 'SECRETKEY', { expiresIn: "1h" });
-        res, status(200).json({ result, token });
-    } catch (error) {
-        res, status(500).json({ message: 'Something went wrong' });
-    }
 
+        res.status(201).json({ result, token });
+    } catch (error) {
+        res.status(500).json({ message: "Something went wrong" });
+
+        console.log(error);
+    }
 };
