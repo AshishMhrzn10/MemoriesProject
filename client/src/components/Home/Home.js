@@ -5,7 +5,7 @@ import ChipInput from 'material-ui-chip-input';
 import Posts from '../Posts/Posts';
 import Form from '../Form/Form';
 import { useDispatch } from "react-redux";
-import { getPosts } from '../../actions/posts';
+import { getPosts, getPostsBySearch } from '../../actions/posts';
 import Paginate from '../Pagination';
 import useStyles from './styles';
 
@@ -30,8 +30,9 @@ const Home = () => {
     }, [currentId, dispatch]);
 
     const searchPost = () => {
-        if (search.trim()) {
-            //dispatch -> fetch search post
+        if (search.trim() || tags) {
+            dispatch(getPostsBySearch({ search, tags: tags.join(',') }));
+            history.push(`/posts/search?searchQuery=${search || 'none'}&tags=${tags.join(',')}`);
         }
         else {
             history.push('/');
@@ -63,7 +64,7 @@ const Home = () => {
                                 label="Search Memories"
                                 onKeyPress={handleKeyPress}
                                 fullWidth
-                                value="search"
+                                value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                             />
                             <ChipInput
